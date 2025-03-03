@@ -1158,60 +1158,101 @@ const RetirementCalculator = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const workbook = XLSX.read(e.target.result, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(firstSheet);
-
-        // Validate the data structure
-        if (!data.length) {
-          setUploadError('File is empty');
-          return;
+    
+    // Check if it's a JSON file (our snapshot format)
+    if (file.name.toLowerCase().endsWith('.json')) {
+      reader.onload = (e) => {
+        try {
+          const snapshot = JSON.parse(e.target.result);
+          
+          // Validate the snapshot structure
+          if (!snapshot.investments || !snapshot.parameters) {
+            setUploadError('Invalid snapshot file format');
+            return;
+          }
+          
+          // Update investments
+          setUsInvestments(snapshot.investments.usInvestments || []);
+          setIndiaInvestments(snapshot.investments.indiaInvestments || []);
+          setPropertyInvestments(snapshot.investments.propertyInvestments || []);
+          
+          // Update parameters if they exist
+          if (snapshot.parameters) {
+            if (snapshot.parameters.retirementGoal) setRetirementGoal(snapshot.parameters.retirementGoal);
+            if (snapshot.parameters.yearsToRetirement) setYearsToRetirement(snapshot.parameters.yearsToRetirement);
+            if (snapshot.parameters.inflationRate) setInflationRate(snapshot.parameters.inflationRate);
+            if (snapshot.parameters.yearlyContribution) setYearlyContribution(snapshot.parameters.yearlyContribution);
+          }
+          
+          setShowUploadModal(false);
+          setUploadError('');
+          
+        } catch (error) {
+          setUploadError('Error processing snapshot file. The file may be corrupted.');
         }
+      };
+      reader.readAsText(file);
+    } else {
+      // Handle Excel files (existing functionality)
+      reader.onload = (e) => {
+        try {
+          const workbook = XLSX.read(e.target.result, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(firstSheet);
 
-        // Check required columns
-        const requiredColumns = ['Location', 'Name', 'Asset Type', 'Amount', 'Return Rate'];
-        const missingColumns = requiredColumns.filter(col => 
-          !Object.keys(data[0]).some(key => key.toLowerCase() === col.toLowerCase())
-        );
+          // Validate the data structure
+          if (!data.length) {
+            setUploadError('File is empty');
+            return;
+          }
 
-        if (missingColumns.length) {
-          setUploadError(`Missing required columns: ${missingColumns.join(', ')}`);
-          return;
+          // Check required columns
+          const requiredColumns = ['Location', 'Name', 'Asset Type', 'Amount', 'Return Rate'];
+          const missingColumns = requiredColumns.filter(col => 
+            !Object.keys(data[0]).some(key => key.toLowerCase() === col.toLowerCase())
+          );
+
+          if (missingColumns.length) {
+            setUploadError(`Missing required columns: ${missingColumns.join(', ')}`);
+            return;
+          }
+
+          // Process the data
+          const newInvestments = data.map(row => ({
+            id: generateId(row.Location.toLowerCase()),
+            name: row.Name,
+            type: row.Name,
+            assetType: row['Asset Type'],
+            amount: Number(row.Amount),
+            returnRate: Number(row['Return Rate']),
+            allocation: 0,
+            location: row.Location // Add location property
+          }));
+
+          // Group by location
+          const usInvs = newInvestments.filter(inv => 
+            inv.name && inv.amount && inv.location && inv.location.toLowerCase() === 'us'
+          );
+          const indiaInvs = newInvestments.filter(inv => 
+            inv.name && inv.amount && inv.location && inv.location.toLowerCase() === 'india'
+          );
+          const propertyInvs = newInvestments.filter(inv => 
+            inv.name && inv.amount && inv.location && inv.location.toLowerCase() === 'property'
+          );
+
+          // Update state
+          setUsInvestments(usInvs);
+          setIndiaInvestments(indiaInvs);
+          setPropertyInvestments(propertyInvs);
+          setShowUploadModal(false);
+          setUploadError('');
+
+        } catch (error) {
+          setUploadError('Error processing file. Please check the format.');
         }
-
-        // Process the data
-        const newInvestments = data.map(row => ({
-          id: generateId(row.Location.toLowerCase()),
-          name: row.Name,
-          type: row.Name,
-          assetType: row['Asset Type'],
-          amount: Number(row.Amount),
-          returnRate: Number(row['Return Rate']),
-          allocation: 0
-        }));
-
-        // Group by location
-        const usInvs = newInvestments.filter(inv => inv.name && inv.amount && 
-          row.Location.toLowerCase() === 'us');
-        const indiaInvs = newInvestments.filter(inv => inv.name && inv.amount && 
-          row.Location.toLowerCase() === 'india');
-        const propertyInvs = newInvestments.filter(inv => inv.name && inv.amount && 
-          row.Location.toLowerCase() === 'property');
-
-        // Update state
-        setUsInvestments(usInvs);
-        setIndiaInvestments(indiaInvs);
-        setPropertyInvestments(propertyInvs);
-        setShowUploadModal(false);
-        setUploadError('');
-
-      } catch (error) {
-        setUploadError('Error processing file. Please check the format.');
-      }
-    };
-    reader.readAsArrayBuffer(file);
+      };
+      reader.readAsArrayBuffer(file);
+    }
   };
 
   // Upload Modal Component
@@ -1240,16 +1281,31 @@ const RetirementCalculator = () => {
               <ul className="space-y-3 text-white/80 text-sm">
                 <li className="flex items-start">
                   <span className="text-indigo-400 mr-2">•</span>
-                  Upload an Excel file (.xlsx) or CSV file
-                </li>
-                <li className="flex items-start">
-                  <span className="text-indigo-400 mr-2">•</span>
-                  First row must contain column headers
+                  <div>
+                    <strong>Option 1:</strong> Upload a Retirement Calculator Snapshot (.json)
+                    <div className="mt-1 text-white/60">
+                      This is the recommended format created by the "Save Snapshot" button.
+                      It preserves all your investments and parameters.
+                    </div>
+                  </div>
                 </li>
                 <li className="flex items-start">
                   <span className="text-indigo-400 mr-2">•</span>
                   <div>
-                    <div>Required columns:</div>
+                    <strong>Option 2:</strong> Upload an Excel file (.xlsx) or CSV file
+                    <div className="mt-1 text-white/60">
+                      For importing data from other sources. Must follow the format below.
+                    </div>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-400 mr-2">•</span>
+                  First row must contain column headers (for Excel/CSV)
+                </li>
+                <li className="flex items-start">
+                  <span className="text-indigo-400 mr-2">•</span>
+                  <div>
+                    <div>Required columns (for Excel/CSV):</div>
                     <ul className="mt-2 ml-4 space-y-2 text-white/60">
                       <li className="flex items-start">
                         <span className="text-indigo-400/70 mr-2">◦</span>
@@ -1519,6 +1575,48 @@ US,401k Fund,401K,100000,7</pre>
       setPropertyInvestments(initialData.propertyInvestments);
       alert('Saved data has been cleared. The page will now show the default investments.');
     }
+  };
+  
+  // Add export investment snapshot function
+  const exportInvestmentSnapshot = () => {
+    // Create a snapshot object with all the current data
+    const snapshot = {
+      investments: {
+        usInvestments,
+        indiaInvestments,
+        propertyInvestments
+      },
+      parameters: {
+        retirementGoal,
+        yearsToRetirement,
+        inflationRate,
+        yearlyContribution
+      },
+      metadata: {
+        exportDate: new Date().toISOString(),
+        version: "1.0"
+      }
+    };
+    
+    // Convert to JSON string
+    const jsonString = JSON.stringify(snapshot, null, 2);
+    
+    // Create a blob and download link
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a temporary link element and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `retirement-calculator-snapshot-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    }, 100);
   };
   
   return (
@@ -1967,7 +2065,20 @@ After 15 years: $100,000 × (1 + 0.08)^15 = $317,217
 The totals row sums all investments, and the inflation-adjusted row shows what these values would be worth in today's dollars.`}
               />
             </h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={exportInvestmentSnapshot}
+                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                title="Save a snapshot of your current investments for later use"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
+                  <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>Save Snapshot</span>
+              </button>
             </div>
+          </div>
           {renderInvestmentTable()}
           </div>
           
