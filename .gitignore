@@ -33,3 +33,6 @@ yarn-error.log*
 
 # Backup files
 *.bak
+
+# Personal data
+src/investmentData.js

@@ -1,7 +1,19 @@
 // RetirementCalculator.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import * as XLSX from 'xlsx';
+// Import sample data (this will be in the GitHub repo)
+import { sampleInvestments } from './sampleInvestmentData';
+
+// Try to import personal data (this will be ignored by Git)
+let personalData = null;
+try {
+  // This import will fail in the GitHub repo since the file is gitignored
+  personalData = require('./investmentData').personalInvestments;
+} catch (e) {
+  // If personal data file doesn't exist, we'll use the sample data
+  console.log('Using sample investment data. Create src/investmentData.js for personal data.');
+}
 
 // Add IBM Plex Mono font import
 import '@fontsource/ibm-plex-mono';
@@ -77,28 +89,13 @@ const RetirementCalculator = () => {
     'Bonus': 0.0,
   };
   
-  // Dynamic investment categories based on Excel data
-  const [usInvestments, setUsInvestments] = useState([
-    { id: 'us1', name: 'TPEG', type: 'TPEG', assetType: 'Private Equity', amount: 75000, returnRate: 12.0, allocation: 3.01 },
-    { id: 'us2', name: 'TPEG', type: 'TPEG', assetType: 'Private Equity', amount: 75000, returnRate: 12.0, allocation: 3.01 },
-    { id: 'us3', name: 'First Tech Credit', type: 'First Tech Credit', assetType: 'Stocks', amount: 82500, returnRate: 8.0, allocation: 3.31 },
-    { id: 'us4', name: 'Nanban', type: 'Nanban', assetType: 'Real Estate', amount: 50000, returnRate: 5.0, allocation: 2.01 },
-    { id: 'us5', name: 'Bank of America', type: 'Bank of America', assetType: 'Cash Deposit', amount: 150000, returnRate: 2.0, allocation: 6.02 },
-    { id: 'us6', name: 'US Investments', type: 'US Investments', assetType: 'Cash', amount: 50000, returnRate: 1.5, allocation: 2.01 },
-    { id: 'us7', name: 'Etrade', type: 'Etrade', assetType: 'Stocks', amount: 230000, returnRate: 8.0, allocation: 9.23 },
-    { id: 'us8', name: 'Ceera/Schwab', type: 'Ceera/Schwab', assetType: 'Stocks', amount: 273000, returnRate: 8.0, allocation: 10.96 },
-    { id: 'us9', name: 'WDC Bonus', type: 'WDC Bonus', assetType: 'Bonus', amount: 150000, returnRate: 0.0, allocation: 6.02 },
-    { id: 'us10', name: 'WDC', type: 'WDC', assetType: '401K', amount: 189000, returnRate: 7.0, allocation: 7.59 },
-    { id: 'us11', name: 'House', type: 'House', assetType: 'Real Estate', amount: 500000, returnRate: 5.0, allocation: 20.07 },
-    { id: 'us12', name: 'MMRL', type: 'MMRL', assetType: 'Cash', amount: 150000, returnRate: 1.5, allocation: 6.02 },
-    { id: 'us13', name: 'Tara Capital SSB', type: 'Tara Capital SSB', assetType: 'Private Equity', amount: 60000, returnRate: 12.0, allocation: 2.41 },
-  ]);
+  // Use personal data if available, otherwise use sample data
+  const initialData = personalData || sampleInvestments;
   
-  const [indiaInvestments, setIndiaInvestments] = useState([
-    { id: 'in1', name: 'India Investments', type: 'India Investments', assetType: 'Real Estate', amount: 457000, returnRate: 5.0, allocation: 18.34 },
-  ]);
-  
-  const [propertyInvestments, setPropertyInvestments] = useState([]);
+  // Dynamic investment categories based on data
+  const [usInvestments, setUsInvestments] = useState(initialData.usInvestments);
+  const [indiaInvestments, setIndiaInvestments] = useState(initialData.indiaInvestments);
+  const [propertyInvestments, setPropertyInvestments] = useState(initialData.propertyInvestments);
   
   // New investment form state
   const [newInvestment, setNewInvestment] = useState({
