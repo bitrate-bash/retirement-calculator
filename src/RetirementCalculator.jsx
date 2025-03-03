@@ -38,8 +38,8 @@ const InfoButton = ({ title, explanation, example }) => {
       
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-black/90 rounded-xl p-5 max-w-2xl w-full border border-white/20 shadow-xl font-['IBM_Plex_Mono'] max-h-[90vh] overflow-y-auto text-left">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-black/90 rounded-xl p-5 sm:p-6 md:p-8 max-w-2xl w-full border border-white/20 shadow-xl font-['IBM_Plex_Mono'] max-h-[90vh] overflow-y-auto text-left">
+            <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-white tracking-tight">{title} Calculation</h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -49,15 +49,15 @@ const InfoButton = ({ title, explanation, example }) => {
               </button>
             </div>
             
-            <div className="space-y-4">
-              <div className="text-white/80 text-sm text-left">
+            <div className="space-y-6">
+              <div className="text-white/80 text-sm text-left leading-relaxed">
                 {explanation}
               </div>
               
               {example && (
-                <div className="bg-white/10 p-4 rounded-lg border border-white/10">
-                  <h4 className="text-white font-medium mb-2 text-left">Example:</h4>
-                  <div className="text-white/80 text-sm whitespace-pre-wrap font-mono text-left">
+                <div className="bg-white/10 p-5 rounded-lg border border-white/10">
+                  <h4 className="text-white font-medium mb-4 text-left">Example:</h4>
+                  <div className="text-white/80 text-sm whitespace-pre-wrap font-mono text-left leading-relaxed">
                     {example}
                   </div>
                 </div>
@@ -860,7 +860,7 @@ const RetirementCalculator = () => {
               <td className="p-3 text-sm text-center">
                 <div className="font-semibold text-white">
                   {formatCurrency(totals.year1)}
-                </div>
+            </div>
                 <div className="text-xs text-green-400">
                   (+{((totals.year1 / totals.amount - 1) * 100).toFixed(1)}%)
                 </div>
@@ -910,7 +910,7 @@ const RetirementCalculator = () => {
               <td className="p-3 text-sm text-center">
                 <div className="font-semibold text-white">
                   {formatCurrency(totals.year1 / Math.pow(1 + (inflationRate / 100), 1))}
-                </div>
+              </div>
                 <div className="text-xs text-amber-400">
                   (+{((totals.year1 / Math.pow(1 + (inflationRate / 100), 1) / totals.amount - 1) * 100).toFixed(1)}%)
                 </div>
@@ -952,18 +952,18 @@ const RetirementCalculator = () => {
             
             <tr>
               <td colSpan="11" className="p-3">
-                    <button
+                  <button
                   onClick={() => setShowAddForm(true)}
                   className="w-full p-2 rounded-lg border bg-white/10 text-white border-white/20 hover:bg-white/20 transition-colors text-sm font-medium"
                   disabled={showAddForm}
                     >
                   + Add Investment
-                    </button>
+                  </button>
               </td>
             </tr>
           </tbody>
         </table>
-              </div>
+                </div>
     );
   };
   
@@ -1222,7 +1222,7 @@ US,401k Fund,401K,100000,7</pre>
             )}
             
             <div className="mt-6">
-              <input
+                    <input
                 type="file"
                 accept=".xlsx,.csv"
                 onChange={handleFileUpload}
@@ -1235,8 +1235,8 @@ US,401k Fund,401K,100000,7</pre>
                   file:transition-colors
                   cursor-pointer
                   focus:outline-none"
-              />
-            </div>
+                    />
+                  </div>
           </div>
         </div>
       </div>
@@ -1275,8 +1275,8 @@ US,401k Fund,401K,100000,7</pre>
             >
               ×
             </button>
-          </div>
-            
+                  </div>
+                  
           <div className="space-y-6">
             {/* Core Components */}
             <div className="bg-white/5 p-5 rounded-lg border border-white/20">
@@ -1307,7 +1307,7 @@ US,401k Fund,401K,100000,7</pre>
                   </div>
                 </li>
               </ul>
-            </div>
+                  </div>
                   
             {/* Calculations */}
             <div className="bg-white/5 p-5 rounded-lg border border-white/20">
@@ -1350,7 +1350,7 @@ US,401k Fund,401K,100000,7</pre>
                   </div>
                 </li>
               </ul>
-            </div>
+                  </div>
                   
             {/* Investment Management */}
             <div className="bg-white/5 p-5 rounded-lg border border-white/20">
@@ -1420,21 +1420,21 @@ US,401k Fund,401K,100000,7</pre>
   
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-[1280px] mx-auto p-8 font-['IBM_Plex_Mono'] text-white">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">Retirement Calculator</h1>
-          <div className="flex gap-3">
-                    <button
+      <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 font-['IBM_Plex_Mono'] text-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Retirement Calculator</h1>
+          <div className="flex flex-wrap gap-3">
+            <button
               onClick={() => setShowInfoModal(true)}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
               title="How it works"
-                    >
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
               <span>Info</span>
-                    </button>
-                    <button
+            </button>
+            <button
               onClick={() => setShowUploadModal(true)}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
             >
@@ -1451,15 +1451,15 @@ US,401k Fund,401K,100000,7</pre>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 00-1.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 101.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-                    </button>
-                  </div>
-                </div>
+            </button>
+          </div>
+        </div>
 
         <UploadModal />
         <InfoModal />
 
         {/* Retirement Goal and Current Assets Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Retirement Goal Controls */}
           <div className="bg-white/5 p-6 rounded-lg border border-white/10">
             <h2 className="text-2xl font-semibold mb-6 tracking-tight">Retirement Goal</h2>
@@ -1557,9 +1557,9 @@ This means you'll need $${formatCurrencyValue(realGoal)} in ${yearsToRetirement}
                 <div className="text-white/80 text-sm">target adjusted for inflation over {yearsToRetirement} years</div>
                 <div className="text-white/60 text-xs mt-1">
                   (at {inflationRate}% annual inflation rate)
-                </div>
               </div>
-              
+            </div>
+            
               <div className="border-t border-white/10 pt-6">
                 <h2 className="text-2xl font-semibold mb-4 tracking-tight">
                   Additional Savings Needed
@@ -1590,7 +1590,7 @@ This equals $${formatCurrencyValue(requiredAnnualSavings)} per year in additiona
             </div>
             
         {/* Projected Growth Chart Section */}
-        <div className="bg-white/5 rounded-lg p-6 mb-6">
+        <div className="bg-white/5 rounded-lg p-6 sm:p-8 mb-8 border border-white/10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">
               Projected Growth
@@ -1757,7 +1757,7 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
             </div>
             
         {/* Combined Investments Section */}
-        <div className="bg-white/5 rounded-lg p-6 mb-6">
+        <div className="bg-white/5 rounded-lg p-6 sm:p-8 mb-8 border border-white/10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">
               All Investments (${formatCurrencyValue(userInputTotal)})
@@ -1775,12 +1775,12 @@ After 15 years: $100,000 × (1 + 0.08)^15 = $317,217
 The totals row sums all investments, and the inflation-adjusted row shows what these values would be worth in today's dollars.`}
               />
             </h2>
-          </div>
-          {renderInvestmentTable()}
             </div>
-
+          {renderInvestmentTable()}
+          </div>
+          
         {/* Year by Year Breakdown Section */}
-        <div className="bg-white/5 rounded-lg p-6 mb-6">
+        <div className="bg-white/5 rounded-lg p-6 sm:p-8 mb-8 border border-white/10">
           <h2 className="text-2xl font-semibold mb-6 text-white">
             Year by Year Breakdown
             <InfoButton 
@@ -1798,32 +1798,32 @@ For example, in year ${Math.min(5, yearsToRetirement)}:
 - Additional Savings: $${formatCurrencyValue(projectedData[Math.min(5, yearsToRetirement)]?.additionalSavings || 0)}`}
             />
           </h2>
-          <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-white/10">
               <thead>
                 <tr className="bg-white/5">
-                  <th scope="col" className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Year</th>
-                  <th scope="col" className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Total Assets</th>
-                  <th scope="col" className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Real Value</th>
-                  <th scope="col" className="p-3 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Additional Savings</th>
-                  </tr>
-                </thead>
+                  <th scope="col" className="p-3 sm:p-4 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Year</th>
+                  <th scope="col" className="p-3 sm:p-4 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Total Assets</th>
+                  <th scope="col" className="p-3 sm:p-4 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Real Value</th>
+                  <th scope="col" className="p-3 sm:p-4 text-center text-xs font-semibold uppercase tracking-wider text-white/80">Additional Savings</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-white/10 bg-white/5">
                 {projectedData.map((data) => (
                   <tr key={data.year} className={`hover:bg-white/10 transition-colors ${data.year === 0 ? 'bg-white/10 border-t-2 border-white/20' : ''}`}>
-                    <td className="p-3 text-sm font-medium text-white text-center">{data.year}</td>
-                    <td className="p-3 text-sm text-white text-center">{formatCurrency(data.totalAssets)}</td>
-                    <td className="p-3 text-sm text-white text-center">{formatCurrency(data.realValue)}</td>
-                    <td className="p-3 text-sm text-center">
+                    <td className="p-3 sm:p-4 text-sm font-medium text-white text-center">{data.year}</td>
+                    <td className="p-3 sm:p-4 text-sm text-white text-center">{formatCurrency(data.totalAssets)}</td>
+                    <td className="p-3 sm:p-4 text-sm text-white text-center">{formatCurrency(data.realValue)}</td>
+                    <td className="p-3 sm:p-4 text-sm text-center">
                       {data.year === 0 ? 
                         <span className="text-indigo-400 font-medium">+{formatCurrency(requiredAnnualSavings)} needed/year</span> :
                         <span className="text-white/80">{formatCurrency(data.additionalSavings)}</span>
                       }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             </div>
           </div>
         </div>
