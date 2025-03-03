@@ -20,7 +20,41 @@ import '@fontsource/ibm-plex-mono';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/600.css';
 
-// InfoButton component for showing calculation explanations
+// Helper function to save investments to localStorage
+const saveInvestmentsToLocalStorage = (usInvestments, indiaInvestments, propertyInvestments) => {
+  try {
+    const investmentsData = {
+      usInvestments,
+      indiaInvestments,
+      propertyInvestments,
+      lastUpdated: new Date().toISOString()
+    };
+    localStorage.setItem('retirementCalculatorInvestments', JSON.stringify(investmentsData));
+    console.log('Investments saved to localStorage');
+  } catch (error) {
+    console.error('Error saving investments to localStorage:', error);
+  }
+};
+
+// Helper function to load investments from localStorage
+const loadInvestmentsFromLocalStorage = () => {
+  try {
+    const savedData = localStorage.getItem('retirementCalculatorInvestments');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      console.log('Investments loaded from localStorage (last updated: ' + new Date(parsedData.lastUpdated).toLocaleString() + ')');
+      return {
+        usInvestments: parsedData.usInvestments,
+        indiaInvestments: parsedData.indiaInvestments,
+        propertyInvestments: parsedData.propertyInvestments
+      };
+    }
+  } catch (error) {
+    console.error('Error loading investments from localStorage:', error);
+  }
+  return null;
+};
+
 const InfoButton = ({ title, explanation, example }) => {
   const [showModal, setShowModal] = useState(false);
   
@@ -89,8 +123,9 @@ const RetirementCalculator = () => {
     'Bonus': 0.0,
   };
   
-  // Use personal data if available, otherwise use sample data
-  const initialData = personalData || sampleInvestments;
+  // Try to load from localStorage first, then fall back to personal data or sample data
+  const savedInvestments = loadInvestmentsFromLocalStorage();
+  const initialData = savedInvestments || personalData || sampleInvestments;
   
   // Dynamic investment categories based on data
   const [usInvestments, setUsInvestments] = useState(initialData.usInvestments);
@@ -144,11 +179,20 @@ const RetirementCalculator = () => {
   // Add state for visible lines
   const [visibleLines, setVisibleLines] = useState({
     totalAssets: true,
-    usInvestments: true,
-    indiaInvestments: true,
-    property: true,
+    targetGoal: true,
     additionalSavings: true,
-    targetGoal: true
+    // Asset type visibility
+    PrivateEquity: true,
+    Stocks: true,
+    RealEstate: true,
+    CashDeposit: false,
+    Cash: false,
+    '401K': false, // Set to false to hide by default
+    Bonus: false,
+    // Legacy categories (hidden by default)
+    usInvestments: false,
+    indiaInvestments: false,
+    property: false,
   });
   
   // Add upload modal state
@@ -157,6 +201,11 @@ const RetirementCalculator = () => {
   
   // Add new state for info modal
   const [showInfoModal, setShowInfoModal] = useState(false);
+  
+  // Save investments to localStorage whenever they change
+  useEffect(() => {
+    saveInvestmentsToLocalStorage(usInvestments, indiaInvestments, propertyInvestments);
+  }, [usInvestments, indiaInvestments, propertyInvestments]);
   
   // Calculate category totals
   useEffect(() => {
@@ -251,30 +300,25 @@ const RetirementCalculator = () => {
   
   // Add new investment
   const addInvestment = () => {
-    if (!newInvestment.name.trim()) {
-      alert('Please enter an investment name');
-      return;
-    }
-    
-    const investment = {
-      id: generateId(newInvestment.category),
+    const newId = generateId(newInvestment.category);
+    const investmentToAdd = {
+      id: newId,
       name: newInvestment.name,
-      type: newInvestment.type || newInvestment.name,
+      type: newInvestment.name,
       assetType: newInvestment.assetType,
-      amount: Number(newInvestment.amount),
-      returnRate: Number(newInvestment.returnRate),
-      allocation: 0 // Will be calculated in useEffect
+      amount: newInvestment.amount,
+      returnRate: newInvestment.returnRate,
+      allocation: 0 // Will be recalculated
     };
     
     if (newInvestment.category === 'us') {
-      setUsInvestments([...usInvestments, investment]);
+      setUsInvestments(prev => [...prev, investmentToAdd]);
     } else if (newInvestment.category === 'india') {
-      setIndiaInvestments([...indiaInvestments, investment]);
+      setIndiaInvestments(prev => [...prev, investmentToAdd]);
     } else if (newInvestment.category === 'property') {
-      setPropertyInvestments([...propertyInvestments, investment]);
+      setPropertyInvestments(prev => [...prev, investmentToAdd]);
     }
     
-    // Reset form
     setNewInvestment({
       category: 'us',
       name: '',
@@ -288,49 +332,57 @@ const RetirementCalculator = () => {
   // Remove investment
   const removeInvestment = (category, id) => {
     if (category === 'us') {
-      setUsInvestments(usInvestments.filter(inv => inv.id !== id));
+      setUsInvestments(prev => prev.filter(inv => inv.id !== id));
     } else if (category === 'india') {
-      setIndiaInvestments(indiaInvestments.filter(inv => inv.id !== id));
+      setIndiaInvestments(prev => prev.filter(inv => inv.id !== id));
     } else if (category === 'property') {
-      setPropertyInvestments(propertyInvestments.filter(inv => inv.id !== id));
+      setPropertyInvestments(prev => prev.filter(inv => inv.id !== id));
     }
   };
   
   // Update investment amount
   const updateInvestmentAmount = (category, id, amount) => {
-    const numAmount = Number(amount);
-    
     if (category === 'us') {
-      setUsInvestments(usInvestments.map(inv => 
-        inv.id === id ? { ...inv, amount: numAmount } : inv
-      ));
+      setUsInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, amount: Number(amount) } : inv
+        )
+      );
     } else if (category === 'india') {
-      setIndiaInvestments(indiaInvestments.map(inv => 
-        inv.id === id ? { ...inv, amount: numAmount } : inv
-      ));
+      setIndiaInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, amount: Number(amount) } : inv
+        )
+      );
     } else if (category === 'property') {
-      setPropertyInvestments(propertyInvestments.map(inv => 
-        inv.id === id ? { ...inv, amount: numAmount } : inv
-      ));
+      setPropertyInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, amount: Number(amount) } : inv
+        )
+      );
     }
   };
   
   // Update investment return rate
   const updateInvestmentReturnRate = (category, id, rate) => {
-    const numRate = Number(rate);
-    
     if (category === 'us') {
-      setUsInvestments(usInvestments.map(inv => 
-        inv.id === id ? { ...inv, returnRate: numRate } : inv
-      ));
+      setUsInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, returnRate: Number(rate) } : inv
+        )
+      );
     } else if (category === 'india') {
-      setIndiaInvestments(indiaInvestments.map(inv => 
-        inv.id === id ? { ...inv, returnRate: numRate } : inv
-      ));
+      setIndiaInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, returnRate: Number(rate) } : inv
+        )
+      );
     } else if (category === 'property') {
-      setPropertyInvestments(propertyInvestments.map(inv => 
-        inv.id === id ? { ...inv, returnRate: numRate } : inv
-      ));
+      setPropertyInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, returnRate: Number(rate) } : inv
+        )
+      );
     }
   };
   
@@ -340,17 +392,23 @@ const RetirementCalculator = () => {
     const defaultReturnRate = assetTypeReturns[assetType] || 5.0;
     
     if (category === 'us') {
-      setUsInvestments(usInvestments.map(inv => 
-        inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
-      ));
+      setUsInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
+        )
+      );
     } else if (category === 'india') {
-      setIndiaInvestments(indiaInvestments.map(inv => 
-        inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
-      ));
+      setIndiaInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
+        )
+      );
     } else if (category === 'property') {
-      setPropertyInvestments(propertyInvestments.map(inv => 
-        inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
-      ));
+      setPropertyInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, assetType, returnRate: defaultReturnRate } : inv
+        )
+      );
     }
   };
   
@@ -484,7 +542,22 @@ const RetirementCalculator = () => {
     let cumulativeSavings = 0;
     
     for (let year = 0; year <= yearsToRetirement; year++) {
-      // Calculate totals for each category
+      // Calculate totals for each asset type
+      const assetTypeTotals = {};
+      
+      // Initialize totals for each asset type
+      Object.keys(assetTypeReturns).forEach(assetType => {
+        assetTypeTotals[assetType] = 0;
+      });
+      
+      // Sum up investments by asset type
+      projectedInvestments.forEach(inv => {
+        if (assetTypeTotals[inv.assetType] !== undefined) {
+          assetTypeTotals[inv.assetType] += inv.currentAmount;
+        }
+      });
+      
+      // Calculate totals for legacy categories (for backward compatibility)
       const usTotal = projectedInvestments
         .filter(inv => inv.category === 'us')
         .reduce((sum, inv) => sum + inv.currentAmount, 0);
@@ -504,16 +577,27 @@ const RetirementCalculator = () => {
       const inflationFactor = Math.pow(1 + (inflationRate / 100), year);
       const realValue = totalAssets / inflationFactor;
       
-      data.push({
+      // Create data point with both asset type and legacy category data
+      const dataPoint = {
         year,
         totalAssets: Math.round(totalAssets),
         realValue: Math.round(realValue),
         targetGoal: Math.round(retirementGoal * inflationFactor),
+        additionalSavings: Math.round(cumulativeSavings),
+        // Legacy data (for backward compatibility)
         usInvestments: Math.round(usTotal),
         indiaInvestments: Math.round(indiaTotal),
         property: Math.round(propertyTotal),
-        additionalSavings: Math.round(cumulativeSavings)
+      };
+      
+      // Add asset type data
+      Object.keys(assetTypeTotals).forEach(assetType => {
+        // Convert asset type key to camelCase for use as property name
+        const assetTypeKey = assetType.replace(/\s+/g, '');
+        dataPoint[assetTypeKey] = Math.round(assetTypeTotals[assetType]);
       });
+      
+      data.push(dataPoint);
       
       if (year < yearsToRetirement) {
         // Grow each investment by its specific return rate
@@ -1246,17 +1330,23 @@ US,401k Fund,401K,100000,7</pre>
   // Add new update name function
   const updateInvestmentName = (category, id, name) => {
     if (category === 'us') {
-      setUsInvestments(usInvestments.map(inv => 
-        inv.id === id ? { ...inv, name, type: name } : inv
-      ));
+      setUsInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, name, type: name } : inv
+        )
+      );
     } else if (category === 'india') {
-      setIndiaInvestments(indiaInvestments.map(inv => 
-        inv.id === id ? { ...inv, name, type: name } : inv
-      ));
+      setIndiaInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, name, type: name } : inv
+        )
+      );
     } else if (category === 'property') {
-      setPropertyInvestments(propertyInvestments.map(inv => 
-        inv.id === id ? { ...inv, name, type: name } : inv
-      ));
+      setPropertyInvestments(prev => 
+        prev.map(inv => 
+          inv.id === id ? { ...inv, name, type: name } : inv
+        )
+      );
     }
   };
   
@@ -1418,6 +1508,19 @@ US,401k Fund,401K,100000,7</pre>
     );
   };
   
+  // Add a button to clear localStorage data
+  const clearSavedData = () => {
+    if (window.confirm('Are you sure you want to clear all saved investment data? This cannot be undone.')) {
+      localStorage.removeItem('retirementCalculatorInvestments');
+      // Reload with initial data
+      const initialData = personalData || sampleInvestments;
+      setUsInvestments(initialData.usInvestments);
+      setIndiaInvestments(initialData.indiaInvestments);
+      setPropertyInvestments(initialData.propertyInvestments);
+      alert('Saved data has been cleared. The page will now show the default investments.');
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 font-['IBM_Plex_Mono'] text-white">
@@ -1450,6 +1553,16 @@ US,401k Fund,401K,100000,7</pre>
               <span>Export to Excel</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 00-1.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 101.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <button
+              onClick={clearSavedData}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+              title="Clear saved data and revert to default investments"
+            >
+              <span>Reset Data</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </button>
           </div>
@@ -1596,7 +1709,7 @@ This equals $${formatCurrencyValue(requiredAnnualSavings)} per year in additiona
               Projected Growth
               <InfoButton 
                 title="Projected Growth Chart"
-                explanation="This chart visualizes how your investments and savings are projected to grow over time. It shows the total assets, individual investment categories, additional savings, and your inflation-adjusted target goal."
+                explanation="This chart visualizes how your investments and savings are projected to grow over time. It shows the total assets, individual asset types, additional savings, and your inflation-adjusted target goal."
                 example={`The chart projects growth based on:
 
 1. Each investment grows at its specific return rate
@@ -1618,29 +1731,31 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
               >
                 Total Assets
               </button>
+              
+              {/* Asset Type buttons */}
               <button
-                onClick={() => toggleLine('usInvestments')}
+                onClick={() => toggleLine('PrivateEquity')}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  visibleLines.usInvestments ? 'bg-green-400/20 text-green-300' : 'bg-white/10 text-white'
+                  visibleLines.PrivateEquity ? 'bg-purple-400/20 text-purple-300' : 'bg-white/10 text-white'
                 }`}
               >
-                US Investments
+                Private Equity
               </button>
               <button
-                onClick={() => toggleLine('indiaInvestments')}
+                onClick={() => toggleLine('Stocks')}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  visibleLines.indiaInvestments ? 'bg-yellow-400/20 text-yellow-300' : 'bg-white/10 text-white'
+                  visibleLines.Stocks ? 'bg-green-400/20 text-green-300' : 'bg-white/10 text-white'
                 }`}
               >
-                India Investments
+                Stocks
               </button>
               <button
-                onClick={() => toggleLine('property')}
+                onClick={() => toggleLine('RealEstate')}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  visibleLines.property ? 'bg-purple-400/20 text-purple-300' : 'bg-white/10 text-white'
+                  visibleLines.RealEstate ? 'bg-yellow-400/20 text-yellow-300' : 'bg-white/10 text-white'
                 }`}
               >
-                Property
+                Real Estate
               </button>
               <button
                 onClick={() => toggleLine('additionalSavings')}
@@ -1660,16 +1775,16 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
               </button>
             </div>
           </div>
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[450px]">
             <ResponsiveContainer>
               <LineChart data={projectedData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                    <XAxis 
-                      dataKey="year" 
+                <XAxis 
+                  dataKey="year" 
                   stroke="#fff"
                   label={{ value: 'Years', position: 'bottom', fill: '#fff' }}
-                    />
-                    <YAxis 
+                />
+                <YAxis 
                   stroke="#fff"
                   tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
                   label={{
@@ -1678,8 +1793,8 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
                     position: 'left',
                     fill: '#fff',
                   }}
-                    />
-                    <Tooltip 
+                />
+                <Tooltip 
                   formatter={(value) => [`$${formatCurrencyValue(value)}`, '']}
                   contentStyle={{ 
                     backgroundColor: 'rgba(0, 0, 0, 0.9)', 
@@ -1688,6 +1803,40 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
                     fontFamily: 'IBM Plex Mono',
                     fontSize: '0.875rem',
                     color: '#fff'
+                  }}
+                />
+                <Legend 
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{
+                    paddingTop: 20,
+                    marginBottom: 20
+                  }}
+                  iconSize={10}
+                  itemStyle={{
+                    fontSize: '0.75rem',
+                    color: '#fff',
+                    paddingLeft: 15,
+                    paddingRight: 15
+                  }}
+                  formatter={(value) => <span style={{ color: '#fff' }}>{value}</span>}
+                  margin={{ top: 0, right: 0, bottom: 20, left: 0 }}
+                  content={(props) => {
+                    const { payload } = props;
+                    
+                    return (
+                      <div className="flex flex-wrap justify-center mt-4 mb-2 gap-x-6 gap-y-2">
+                        {payload.map((entry, index) => (
+                          <div key={`item-${index}`} className="flex items-center">
+                            <svg width="10" height="10" className="mr-2">
+                              <rect width="10" height="10" fill={entry.color} />
+                            </svg>
+                            <span className="text-xs text-white">{entry.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
                   }}
                 />
                 {visibleLines.totalAssets && (
@@ -1700,36 +1849,79 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
                     dot={false}
                   />
                 )}
-                {visibleLines.usInvestments && (
+                
+                {/* Asset Type lines */}
+                {visibleLines.PrivateEquity && (
                   <Line
                     type="monotone"
-                    dataKey="usInvestments"
-                    name="US Investments"
-                    stroke="#34D399"
-                    strokeWidth={1}
-                    dot={false}
-                  />
-                )}
-                {visibleLines.indiaInvestments && (
-                  <Line
-                    type="monotone"
-                    dataKey="indiaInvestments"
-                    name="India Investments"
-                    stroke="#FCD34D"
-                    strokeWidth={1}
-                    dot={false}
-                  />
-                )}
-                {visibleLines.property && (
-                  <Line
-                    type="monotone"
-                    dataKey="property"
-                    name="Property"
+                    dataKey="PrivateEquity"
+                    name="Private Equity"
                     stroke="#A78BFA"
                     strokeWidth={1}
                     dot={false}
                   />
                 )}
+                {visibleLines.Stocks && (
+                  <Line
+                    type="monotone"
+                    dataKey="Stocks"
+                    name="Stocks"
+                    stroke="#34D399"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                {visibleLines.RealEstate && (
+                  <Line
+                    type="monotone"
+                    dataKey="RealEstate"
+                    name="Real Estate"
+                    stroke="#FCD34D"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                {visibleLines['401K'] && (
+                  <Line
+                    type="monotone"
+                    dataKey="401K"
+                    name="401K"
+                    stroke="#60A5FA"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                {visibleLines.CashDeposit && (
+                  <Line
+                    type="monotone"
+                    dataKey="CashDeposit"
+                    name="Cash Deposit"
+                    stroke="#F87171"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                {visibleLines.Cash && (
+                  <Line
+                    type="monotone"
+                    dataKey="Cash"
+                    name="Cash"
+                    stroke="#6EE7B7"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                {visibleLines.Bonus && (
+                  <Line
+                    type="monotone"
+                    dataKey="Bonus"
+                    name="Bonus"
+                    stroke="#C4B5FD"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                )}
+                
                 {visibleLines.additionalSavings && (
                   <Line
                     type="monotone"
@@ -1751,11 +1943,11 @@ For example, in year ${Math.floor(yearsToRetirement/2)}:
                     dot={false}
                   />
                 )}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
         {/* Combined Investments Section */}
         <div className="bg-white/5 rounded-lg p-6 sm:p-8 mb-8 border border-white/10">
           <div className="flex justify-between items-center mb-4">
