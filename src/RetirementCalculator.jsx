@@ -691,7 +691,7 @@ const RetirementCalculator = () => {
             <tr className="bg-white/5">
               <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-24">Location</th>
               <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-32">Name</th>
-              <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-36">Asset Type</th>
+              <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-44">Asset Type</th>
               <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-28">Amount</th>
               <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-20">Return Rate</th>
               <th scope="col" className="p-2 text-center text-xs font-semibold uppercase tracking-wider text-white/80 w-24">1 Year</th>
@@ -750,7 +750,7 @@ const RetirementCalculator = () => {
           <select
                     value={inv.assetType}
                     onChange={(e) => updateInvestmentAssetType(inv.location.toLowerCase(), inv.id, e.target.value)}
-                    className="w-full p-1 bg-white/10 border border-white/20 rounded text-white text-sm"
+                    className="w-full p-1 bg-white/10 border border-white/20 rounded text-white text-sm min-w-[160px]"
           >
             {Object.keys(assetTypeReturns).map(type => (
               <option key={type} value={type}>{type}</option>
@@ -862,7 +862,7 @@ const RetirementCalculator = () => {
                         returnRate: assetTypeReturns[assetType]
                         });
                       }}
-                    className="w-full p-1 bg-white/10 border border-white/20 rounded text-white text-sm"
+                    className="w-full p-1 bg-white/10 border border-white/20 rounded text-white text-sm min-w-[160px]"
                     >
                       {Object.keys(assetTypeReturns).map(type => (
                         <option key={type} value={type}>{type}</option>
@@ -1523,7 +1523,7 @@ US,401k Fund,401K,100000,7</pre>
   
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 font-['IBM_Plex_Mono'] text-white">
+      <div className="max-w-[1320px] mx-auto p-4 sm:p-6 md:p-8 font-['IBM_Plex_Mono'] text-white">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Retirement Calculator</h1>
           <div className="flex flex-wrap gap-3">
